@@ -1,12 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Plus, MapPin, Pencil } from "lucide-react";
+import { Plus, MapPin, Pencil, UtensilsCrossed } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DeleteTripButton } from "@/components/trips/delete-trip-button";
 import { TripStats } from "@/components/trips/trip-stats";
 import { CategoryBadge } from "@/components/meals/category-badge";
+import { PhotoPlaceholder } from "@/components/shared/photo-placeholder";
+import { EmptyState } from "@/components/shared/empty-state";
+import { getSignedPhotoUrl, getSignedPhotoUrls } from "@/lib/supabase/storage";
 import type { Meal } from "@/types/database";
 import { format } from "date-fns";
 
@@ -32,16 +35,20 @@ export default async function TripDetailPage({ params }: Props) {
     .eq("trip_id", tripId)
     .order("date", { ascending: false });
 
-  let coverUrl: string | null = null;
-  if (trip.cover_photo_url) {
-    const { data } = await supabase.storage
-      .from("trip-covers")
-      .createSignedUrl(trip.cover_photo_url, 3600);
-    coverUrl = data?.signedUrl ?? null;
-  }
+  const typedMeals = (meals as Meal[]) || [];
+
+  const [coverUrl, photoUrls] = await Promise.all([
+    getSignedPhotoUrl("trip-covers", trip.cover_photo_url),
+    getSignedPhotoUrls("meal-photos", typedMeals.map((m) => m.photo_url)),
+  ]);
+
+  const ratings = typedMeals.filter((m) => m.rating).map((m) => m.rating!);
+  const avgRating = ratings.length > 0
+    ? ratings.reduce((a, b) => a + b, 0) / ratings.length
+    : null;
 
   return (
-    <div className="p-4 md:p-6 max-w-4xl mx-auto">
+    <div className="p-4 md:p-6 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-2 duration-300 fill-mode-backwards">
       {coverUrl && (
         <img
           src={coverUrl}
@@ -77,17 +84,11 @@ export default async function TripDetailPage({ params }: Props) {
         </div>
       </div>
 
-      {meals && meals.length > 0 && (() => {
-        const ratings = (meals as Meal[]).filter((m) => m.rating).map((m) => m.rating!);
-        const avgRating = ratings.length > 0
-          ? ratings.reduce((a, b) => a + b, 0) / ratings.length
-          : null;
-        return (
-          <div className="mb-4">
-            <TripStats mealCount={meals.length} avgRating={avgRating} />
-          </div>
-        );
-      })()}
+      {typedMeals.length > 0 && (
+        <div className="mb-4">
+          <TripStats mealCount={typedMeals.length} avgRating={avgRating} />
+        </div>
+      )}
 
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">Meals</h2>
@@ -99,28 +100,34 @@ export default async function TripDetailPage({ params }: Props) {
         </Button>
       </div>
 
-      {!meals || meals.length === 0 ? (
-        <Card>
-          <CardContent className="py-8 text-center">
-            <p className="text-muted-foreground mb-4">
-              No meals recorded yet. Add your first one!
-            </p>
+      {typedMeals.length === 0 ? (
+        <EmptyState
+          icon={UtensilsCrossed}
+          title="No meals recorded yet"
+          description="Add your first meal to start building your food journal for this trip."
+          action={
             <Button size="sm" asChild>
               <Link href={`/trips/${tripId}/meals/new`}>Add Meal</Link>
             </Button>
-          </CardContent>
-        </Card>
+          }
+        />
       ) : (
         <div className="space-y-3">
-          {(meals as Meal[]).map((meal) => (
+          {typedMeals.map((meal, i) => (
             <Link key={meal.id} href={`/trips/${tripId}/meals/${meal.id}`}>
-              <Card className="hover:shadow-sm transition-shadow cursor-pointer">
+              <Card className="group transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer">
                 <CardContent className="flex items-center gap-4 py-3">
-                  {meal.photo_url && (
+                  {photoUrls[i] ? (
                     <img
-                      src={meal.photo_url}
+                      src={photoUrls[i]!}
                       alt={meal.location_name}
-                      className="w-16 h-16 rounded-md object-cover"
+                      className="w-24 h-24 md:w-32 md:h-32 rounded-lg object-cover shadow-sm group-hover:scale-[1.02] transition-transform duration-300 shrink-0"
+                    />
+                  ) : (
+                    <PhotoPlaceholder
+                      variant="meal"
+                      seed={meal.location_name}
+                      className="w-24 h-24 md:w-32 md:h-32 rounded-lg shrink-0"
                     />
                   )}
                   <div className="flex-1 min-w-0">
@@ -132,7 +139,7 @@ export default async function TripDetailPage({ params }: Props) {
                       {format(new Date(meal.date), "MMM d, yyyy")}
                     </p>
                     {meal.rating && (
-                      <p className="text-sm">{"★".repeat(meal.rating)}{"☆".repeat(5 - meal.rating)}</p>
+                      <p className="text-sm mt-1">{"★".repeat(meal.rating)}{"☆".repeat(5 - meal.rating)}</p>
                     )}
                   </div>
                 </CardContent>
