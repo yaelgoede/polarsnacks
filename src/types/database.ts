@@ -29,6 +29,20 @@ export type Meal = {
   updated_at: string;
 };
 
+export type FeedbackType = "bug" | "idea" | "other" | "satisfaction";
+
+export type Feedback = {
+  id: string;
+  user_id: string;
+  type: FeedbackType;
+  message: string | null;
+  rating: number | null;
+  page_path: string | null;
+  context: Record<string, unknown>;
+  screenshot_path: string | null;
+  created_at: string;
+};
+
 export type Listing = {
   id: string;
   owner_id: string | null;
