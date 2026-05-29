@@ -1,10 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Plus, MapPin, Pencil, Trash2 } from "lucide-react";
+import { Plus, MapPin, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DeleteTripButton } from "@/components/trips/delete-trip-button";
+import { TripStats } from "@/components/trips/trip-stats";
+import { CategoryBadge } from "@/components/meals/category-badge";
 import type { Meal } from "@/types/database";
 import { format } from "date-fns";
 
@@ -30,8 +32,24 @@ export default async function TripDetailPage({ params }: Props) {
     .eq("trip_id", tripId)
     .order("date", { ascending: false });
 
+  let coverUrl: string | null = null;
+  if (trip.cover_photo_url) {
+    const { data } = await supabase.storage
+      .from("trip-covers")
+      .createSignedUrl(trip.cover_photo_url, 3600);
+    coverUrl = data?.signedUrl ?? null;
+  }
+
   return (
     <div className="p-4 md:p-6 max-w-4xl mx-auto">
+      {coverUrl && (
+        <img
+          src={coverUrl}
+          alt={trip.name}
+          className="w-full h-48 md:h-64 object-cover rounded-lg mb-6"
+        />
+      )}
+
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">{trip.name}</h1>
@@ -58,6 +76,18 @@ export default async function TripDetailPage({ params }: Props) {
           <DeleteTripButton tripId={tripId} />
         </div>
       </div>
+
+      {meals && meals.length > 0 && (() => {
+        const ratings = (meals as Meal[]).filter((m) => m.rating).map((m) => m.rating!);
+        const avgRating = ratings.length > 0
+          ? ratings.reduce((a, b) => a + b, 0) / ratings.length
+          : null;
+        return (
+          <div className="mb-4">
+            <TripStats mealCount={meals.length} avgRating={avgRating} />
+          </div>
+        );
+      })()}
 
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold">Meals</h2>
@@ -94,7 +124,10 @@ export default async function TripDetailPage({ params }: Props) {
                     />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{meal.location_name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium truncate">{meal.location_name}</p>
+                      {meal.category && <CategoryBadge category={meal.category} />}
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       {format(new Date(meal.date), "MMM d, yyyy")}
                     </p>

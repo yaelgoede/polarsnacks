@@ -1,8 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Pencil, ArrowLeft } from "lucide-react";
+import { Pencil, ArrowLeft, Navigation } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { MealMiniMap } from "@/components/map/meal-mini-map";
+import { CategoryBadge } from "@/components/meals/category-badge";
 import { format } from "date-fns";
 import type { Meal } from "@/types/database";
 
@@ -58,9 +60,12 @@ export default async function MealDetailPage({ params }: Props) {
       )}
 
       <h1 className="text-2xl font-bold">{typedMeal.location_name}</h1>
-      <p className="text-muted-foreground mt-1">
-        {format(new Date(typedMeal.date), "MMMM d, yyyy")}
-      </p>
+      <div className="flex items-center gap-2 mt-1">
+        <p className="text-muted-foreground">
+          {format(new Date(typedMeal.date), "MMMM d, yyyy")}
+        </p>
+        {typedMeal.category && <CategoryBadge category={typedMeal.category} />}
+      </div>
 
       {typedMeal.rating && (
         <p className="mt-2 text-lg">
@@ -73,9 +78,18 @@ export default async function MealDetailPage({ params }: Props) {
       )}
 
       {typedMeal.latitude && typedMeal.longitude && (
-        <p className="mt-4 text-sm text-muted-foreground">
-          📍 {typedMeal.latitude.toFixed(4)}, {typedMeal.longitude.toFixed(4)}
-        </p>
+        <div className="mt-4 space-y-2">
+          <MealMiniMap lat={typedMeal.latitude} lng={typedMeal.longitude} />
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&destination=${typedMeal.latitude},${typedMeal.longitude}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+          >
+            <Navigation className="h-3.5 w-3.5" />
+            Get directions
+          </a>
+        </div>
       )}
     </div>
   );

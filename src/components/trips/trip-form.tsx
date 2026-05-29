@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { PhotoUpload } from "@/components/meals/photo-upload";
+import { compressImage } from "@/lib/image";
 import type { Trip } from "@/types/database";
 
 type TripFormProps = {
@@ -17,6 +19,7 @@ export function TripForm({ trip }: TripFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [coverFile, setCoverFile] = useState<File | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -37,10 +40,27 @@ export function TripForm({ trip }: TripFormProps) {
       return;
     }
 
+    let cover_photo_url = trip?.cover_photo_url ?? null;
+
+    if (coverFile) {
+      const compressed = await compressImage(coverFile);
+      const fileName = `${user.id}/${crypto.randomUUID()}.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from("trip-covers")
+        .upload(fileName, compressed, { contentType: "image/jpeg" });
+
+      if (uploadError) {
+        setError(`Cover upload failed: ${uploadError.message}`);
+        setLoading(false);
+        return;
+      }
+      cover_photo_url = fileName;
+    }
+
     if (trip) {
       const { error: updateError } = await supabase
         .from("trips")
-        .update({ name, description: description || null, start_date, end_date: end_date || null })
+        .update({ name, description: description || null, start_date, end_date: end_date || null, cover_photo_url })
         .eq("id", trip.id);
 
       if (updateError) {
@@ -52,7 +72,7 @@ export function TripForm({ trip }: TripFormProps) {
     } else {
       const { data, error: insertError } = await supabase
         .from("trips")
-        .insert({ name, description: description || null, start_date, end_date: end_date || null, user_id: user.id })
+        .insert({ name, description: description || null, start_date, end_date: end_date || null, cover_photo_url, user_id: user.id })
         .select()
         .single();
 
@@ -69,6 +89,15 @@ export function TripForm({ trip }: TripFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
+      <div className="space-y-2">
+        <Label>Cover Photo</Label>
+        <PhotoUpload
+          onFileSelect={setCoverFile}
+          preview={trip?.cover_photo_url}
+          onClear={() => setCoverFile(null)}
+        />
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="name">Trip Name</Label>
         <Input

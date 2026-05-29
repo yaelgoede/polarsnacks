@@ -10,6 +10,8 @@ export type Trip = {
   updated_at: string;
 };
 
+export type MealCategory = "breakfast" | "lunch" | "dinner" | "snack" | "drinks";
+
 export type Meal = {
   id: string;
   trip_id: string;
@@ -22,6 +24,7 @@ export type Meal = {
   date: string;
   rating: number | null;
   notes: string | null;
+  category: MealCategory | null;
   created_at: string;
   updated_at: string;
 };

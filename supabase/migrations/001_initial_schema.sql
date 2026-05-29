@@ -3,7 +3,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Trips table
 CREATE TABLE public.trips (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   description TEXT,
@@ -16,7 +16,7 @@ CREATE TABLE public.trips (
 
 -- Restaurant listings table
 CREATE TABLE public.listings (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   restaurant_name TEXT NOT NULL,
   description TEXT,
   location_name TEXT,
@@ -38,7 +38,7 @@ CREATE TABLE public.listings (
 
 -- Meals table
 CREATE TABLE public.meals (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT extensions.uuid_generate_v4(),
   trip_id UUID NOT NULL REFERENCES public.trips(id) ON DELETE CASCADE,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   listing_id UUID REFERENCES public.listings(id) ON DELETE SET NULL,
@@ -110,22 +110,4 @@ CREATE TRIGGER listings_updated_at
   BEFORE UPDATE ON public.listings
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
--- Storage buckets (run in Supabase dashboard or via supabase CLI)
--- INSERT INTO storage.buckets (id, name, public) VALUES ('meal-photos', 'meal-photos', false);
--- INSERT INTO storage.buckets (id, name, public) VALUES ('trip-covers', 'trip-covers', false);
-
--- Storage policies for meal-photos (private bucket)
--- Users can upload to their own folder
--- CREATE POLICY "Users upload own meal photos"
--- ON storage.objects FOR INSERT
--- WITH CHECK (bucket_id = 'meal-photos' AND auth.uid()::text = (storage.foldername(name))[1]);
-
--- Users can read their own photos
--- CREATE POLICY "Users read own meal photos"
--- ON storage.objects FOR SELECT
--- USING (bucket_id = 'meal-photos' AND auth.uid()::text = (storage.foldername(name))[1]);
-
--- Users can delete their own photos
--- CREATE POLICY "Users delete own meal photos"
--- ON storage.objects FOR DELETE
--- USING (bucket_id = 'meal-photos' AND auth.uid()::text = (storage.foldername(name))[1]);
+-- Storage buckets and policies are in 002_storage_policies.sql
