@@ -8,7 +8,7 @@ Record every meal on your travels. Pin it on a map. Relive the flavors.
 - **Supabase** (Postgres, Auth, Storage)
 - **Tailwind CSS** + shadcn/ui
 - **Leaflet** for maps
-- **bunq API** for payment requests
+- **Rabobank betaalverzoek** for payments
 - Deployed on **Vercel**
 
 ## Getting Started
@@ -46,13 +46,11 @@ Create storage buckets:
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same page → **Project API keys** → `anon` / `public` key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Same page → **Project API keys** → `service_role` key (keep secret, never expose client-side) |
 
-### bunq
+### Payments
 
 | Variable | Where to find it |
 |----------|-----------------|
-| `BUNQ_API_KEY` | [bunq Developer Portal](https://developer.bunq.com/) → create an API key via the bunq app or sandbox account. In the app: **Profile → Security & Settings → Developers → API keys** |
-| `BUNQ_ENVIRONMENT` | `SANDBOX` for development, `PRODUCTION` for live payments |
-| `BUNQ_MONETARY_ACCOUNT_ID` | After authenticating with the bunq API, list your monetary accounts — use the `id` of the account you want to receive payments on. In sandbox, create a sandbox user first via the [bunq Sandbox](https://doc.bunq.com/#/sandbox) |
+| `NEXT_PUBLIC_RABOBANK_BETAALVERZOEK_URL` | Your Rabobank betaalverzoek link (e.g. `https://betaalverzoek.rabobank.nl/betaalverzoek/?id=...`). Create one in the Rabobank app under **Betaalverzoek** |
 
 ### App
 
@@ -67,8 +65,8 @@ src/
 ├── app/              # Next.js App Router pages
 │   ├── (auth)/       # Login, auth callback
 │   ├── (app)/        # Authenticated app pages
-│   └── api/          # API routes (bunq integration)
+│   └── api/          # API routes (payment confirmation)
 ├── components/       # React components
-├── lib/              # Supabase clients, bunq API, utilities
+├── lib/              # Supabase clients, utilities
 └── types/            # TypeScript type definitions
 ```

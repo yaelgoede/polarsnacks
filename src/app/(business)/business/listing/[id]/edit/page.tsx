@@ -50,15 +50,6 @@ export default async function EditListingPage({
         </div>
       )}
 
-      {typedListing.payment_status === "requested" && (
-        <div className="mt-8 p-4 border rounded-lg bg-blue-50 dark:bg-blue-900/10">
-          <h2 className="font-semibold mb-2">Payment Requested</h2>
-          <p className="text-sm text-muted-foreground">
-            A payment request has been sent to your email. Complete the payment
-            to get your listing featured.
-          </p>
-        </div>
-      )}
     </div>
   );
 }

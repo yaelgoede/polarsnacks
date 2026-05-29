@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
+const BETAALVERZOEK_URL = process.env.NEXT_PUBLIC_RABOBANK_BETAALVERZOEK_URL;
+
 export function PaymentButton({ listingId }: { listingId: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -13,7 +15,9 @@ export function PaymentButton({ listingId }: { listingId: string }) {
     setLoading(true);
     setError("");
 
-    const res = await fetch("/api/bunq/create-request", {
+    window.open(BETAALVERZOEK_URL, "_blank");
+
+    const res = await fetch("/api/payment/confirm", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ listingId }),
@@ -21,7 +25,7 @@ export function PaymentButton({ listingId }: { listingId: string }) {
 
     if (!res.ok) {
       const data = await res.json();
-      setError(data.error || "Payment request failed");
+      setError(data.error || "Failed to activate listing");
       setLoading(false);
       return;
     }
@@ -32,7 +36,7 @@ export function PaymentButton({ listingId }: { listingId: string }) {
   return (
     <div>
       <Button onClick={handlePayment} disabled={loading}>
-        {loading ? "Processing..." : "Get Featured"}
+        {loading ? "Processing..." : "Get Featured — €15"}
       </Button>
       {error && <p className="text-sm text-destructive mt-2">{error}</p>}
     </div>
