@@ -31,6 +31,7 @@ export type Meal = {
 
 export type Listing = {
   id: string;
+  owner_id: string | null;
   restaurant_name: string;
   description: string | null;
   location_name: string | null;
@@ -39,9 +40,9 @@ export type Listing = {
   website_url: string | null;
   photo_url: string | null;
   is_featured: boolean;
-  payment_status: "pending" | "requested" | "paid" | "expired";
+  payment_status: "draft" | "pending" | "requested" | "paid" | "expired";
   payment_request_id: string | null;
-  amount_cents: number;
+  amount_cents: number | null;
   currency: string;
   contact_email: string;
   valid_until: string | null;

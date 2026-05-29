@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PhotoUpload } from "./photo-upload";
 import { RatingStars } from "./rating-stars";
+import { ListingLinker } from "./listing-linker";
 import { LocationPicker } from "@/components/map/location-picker";
 import { compressImage } from "@/lib/image";
 import type { Meal, MealCategory } from "@/types/database";
@@ -39,6 +40,7 @@ export function MealForm({ tripId, meal }: MealFormProps) {
   );
   const [locationName, setLocationName] = useState(meal?.location_name ?? "");
   const [category, setCategory] = useState<MealCategory | null>(meal?.category ?? null);
+  const [listingId, setListingId] = useState<string | null>(meal?.listing_id ?? null);
 
   const handleLocationNameFound = useCallback((name: string) => {
     setLocationName((prev) => (prev ? prev : name));
@@ -89,6 +91,7 @@ export function MealForm({ tripId, meal }: MealFormProps) {
       notes: notes || null,
       category,
       photo_url,
+      listing_id: listingId,
     };
 
     if (meal) {
@@ -146,6 +149,12 @@ export function MealForm({ tripId, meal }: MealFormProps) {
           onLocationNameFound={handleLocationNameFound}
         />
       </div>
+
+      <ListingLinker
+        value={listingId}
+        onChange={setListingId}
+        location={location}
+      />
 
       <div className="space-y-2">
         <Label htmlFor="date">Date</Label>

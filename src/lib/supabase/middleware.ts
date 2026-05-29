@@ -37,11 +37,25 @@ export async function updateSession(request: NextRequest) {
     !user &&
     !request.nextUrl.pathname.startsWith("/login") &&
     !request.nextUrl.pathname.startsWith("/auth") &&
+    !request.nextUrl.pathname.startsWith("/business/register") &&
     request.nextUrl.pathname !== "/"
   ) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
+  }
+
+  if (
+    user &&
+    request.nextUrl.pathname.startsWith("/business/") &&
+    !request.nextUrl.pathname.startsWith("/business/register")
+  ) {
+    const role = user.user_metadata?.role;
+    if (role !== "business") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/business/register";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

@@ -3,12 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import { createPaymentRequest } from "@/lib/bunq/payment-request";
 import { z } from "zod";
 
+const FEATURE_PRICE_CENTS = parseInt(
+  process.env.LISTING_FEATURE_PRICE_CENTS || "1500"
+);
+const FEATURE_CURRENCY = process.env.LISTING_FEATURE_CURRENCY || "EUR";
+
 const requestSchema = z.object({
   listingId: z.string().uuid(),
-  amount: z.string(),
-  currency: z.string().default("EUR"),
-  contactEmail: z.string().email(),
-  description: z.string(),
 });
 
 export async function POST(request: Request) {
@@ -26,7 +27,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { listingId, amount, currency, contactEmail, description } = parsed.data;
+  const { listingId } = parsed.data;
 
   const { data: listing } = await supabase
     .from("listings")
@@ -34,19 +35,35 @@ export async function POST(request: Request) {
     .eq("id", listingId)
     .single();
 
-  if (!listing || listing.payment_status !== "pending") {
+  if (!listing) {
     return NextResponse.json(
-      { error: "Listing not found or already processed" },
+      { error: "Listing not found" },
       { status: 404 }
     );
   }
 
+  if (listing.owner_id !== user.id) {
+    return NextResponse.json(
+      { error: "Not authorized to manage this listing" },
+      { status: 403 }
+    );
+  }
+
+  if (listing.payment_status !== "draft" && listing.payment_status !== "pending") {
+    return NextResponse.json(
+      { error: "Listing already processed" },
+      { status: 400 }
+    );
+  }
+
+  const amount = (FEATURE_PRICE_CENTS / 100).toFixed(2);
+
   try {
     const result = await createPaymentRequest({
       amount,
-      currency,
-      recipientEmail: contactEmail,
-      description,
+      currency: FEATURE_CURRENCY,
+      recipientEmail: listing.contact_email,
+      description: `PolarSnacks Featured Listing: ${listing.restaurant_name}`,
     });
 
     const requestId = result.Response?.[0]?.Id?.id?.toString();
@@ -56,6 +73,8 @@ export async function POST(request: Request) {
       .update({
         payment_status: "requested",
         payment_request_id: requestId,
+        amount_cents: FEATURE_PRICE_CENTS,
+        currency: FEATURE_CURRENCY,
       })
       .eq("id", listingId);
 

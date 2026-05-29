@@ -16,6 +16,15 @@ export default function HomePage() {
         <Button asChild size="lg" className="shadow-md">
           <Link href="/login">Get Started</Link>
         </Button>
+        <p className="text-sm text-muted-foreground mt-6">
+          Own a restaurant?{" "}
+          <Link
+            href="/business/register"
+            className="text-primary underline underline-offset-4 hover:text-primary/80"
+          >
+            List your business
+          </Link>
+        </p>
       </div>
     </div>
   );
